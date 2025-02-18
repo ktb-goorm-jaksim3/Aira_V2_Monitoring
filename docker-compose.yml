@@ -5,7 +5,7 @@ services:
     ports:
       - 9090:9090
     volumes:
-      - ./Aira_V2_Monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - monitoring
 
@@ -32,13 +32,36 @@ services:
   alertmanager:
     image: prom/alertmanager
     volumes:
-      - ./Aira_V2_Monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
     ports:
       - "9093:9093"
     networks:
       - monitoring
+
+  master:
+    image: locustio/locust
+    container_name: locust-master
+    ports:
+      - "8089:8089"  # 웹 인터페이스 포트
+    networks:
+      - monitoring
+    volumes:
+      - ./locust:/mnt/locust  # Locust 스크립트 마운트
+    environment:
+      - LOCUST_HOST=https://kopmorning.com
+    command: -f /mnt/locust/locustfile.py --master
+
+  worker:
+    image: locustio/locust
+    networks:
+      - monitoring
+    volumes:
+      - ./locust:/mnt/locust  # Locust 스크립트 마운트
+    environment:
+      - LOCUST_HOST=https://kopmorning.com
+    command: -f /mnt/locust/locustfile.py --worker --master-host master
+
+
 networks:
   monitoring:
     external: true
-
-
